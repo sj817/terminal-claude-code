@@ -40,6 +40,7 @@ namespace RemoteControlUnitTests
         TEST_METHOD(Crypto_TokenHash);
         TEST_METHOD(Auth_HashedToken);
         TEST_METHOD(Crypto_ExternalEntry);
+        TEST_METHOD(Crypto_StrictEntryValidation);
     };
 
     void RemoteControlTests::KeyNameToSequence_KnownKeys()
@@ -349,5 +350,28 @@ namespace RemoteControlUnitTests
         VERIFY_IS_FALSE(RemoteControl::Crypto::VerifyTokenHash(entry, "wrong"));
         // The old sha256$ format is no longer recognized.
         VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("sha256$abc$def"));
+    }
+
+    void RemoteControlTests::Crypto_StrictEntryValidation()
+    {
+        // A well-formed entry (16-byte salt, 64-hex hash, >= 10000 iterations).
+        const std::string saltB64 = "AAECAwQFBgcICQoLDA0ODw=="; // 16 bytes
+        const std::string hex64 = "f77e67478ef730ab0f3b1bdbbb0d4ad4136e80d078bc2019c566196b9083ef6c";
+        VERIFY_IS_TRUE(RemoteControl::Crypto::IsHashedToken("pbkdf2$100000$" + saltB64 + "$" + hex64));
+
+        // Iterations below the floor -> rejected.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$5$" + saltB64 + "$" + hex64));
+        // Wrong hash length -> rejected.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$100000$" + saltB64 + "$abcd"));
+        // Non-hex hash of the right length -> rejected.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$100000$" + saltB64 + "$" + std::string(64, 'z')));
+        // Salt that doesn't decode to 16 bytes -> rejected.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$100000$AAAA$" + hex64));
+        // Non-numeric iterations / missing parts -> rejected.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$abc$" + saltB64 + "$" + hex64));
+        VERIFY_IS_FALSE(RemoteControl::Crypto::IsHashedToken("pbkdf2$100000$" + saltB64));
+
+        // VerifyTokenHash also rejects a downgraded entry outright.
+        VERIFY_IS_FALSE(RemoteControl::Crypto::VerifyTokenHash("pbkdf2$1$" + saltB64 + "$" + hex64, "manualsecret"));
     }
 }

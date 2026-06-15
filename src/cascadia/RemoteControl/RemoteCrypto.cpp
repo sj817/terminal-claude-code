@@ -272,11 +272,86 @@ namespace RemoteControl::Crypto
             }
             return out;
         }
+
+        // Reject entries with too few iterations (a downgraded/weak entry).
+        constexpr uint32_t MinIterations = 10000;
+
+        bool IsLowerHexOfLength(std::string_view s, size_t length)
+        {
+            if (s.size() != length)
+            {
+                return false;
+            }
+            for (const auto c : s)
+            {
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Strictly parses and validates "pbkdf2$<iterations>$<base64-salt>$<hex-hash>":
+        // iterations must be a number >= MinIterations, the salt must decode to
+        // exactly SaltLen bytes, and the hash must be exactly KeyLen*2 lowercase
+        // hex characters. Returns true and fills the outputs on success.
+        bool ParseTokenHash(std::string_view entry, uint32_t& iterations, std::vector<uint8_t>& salt, std::string_view& expectedHex)
+        {
+            if (entry.size() <= HashPrefix.size() || entry.substr(0, HashPrefix.size()) != HashPrefix)
+            {
+                return false;
+            }
+            const auto after = entry.substr(HashPrefix.size());
+            const auto sep1 = after.find('$');
+            if (sep1 == std::string_view::npos)
+            {
+                return false;
+            }
+            const auto sep2 = after.find('$', sep1 + 1);
+            if (sep2 == std::string_view::npos)
+            {
+                return false;
+            }
+            const auto itersStr = after.substr(0, sep1);
+            const auto saltB64 = after.substr(sep1 + 1, sep2 - sep1 - 1);
+            const auto hex = after.substr(sep2 + 1);
+
+            uint32_t iters = 0;
+            if (std::from_chars(itersStr.data(), itersStr.data() + itersStr.size(), iters).ec != std::errc{})
+            {
+                return false;
+            }
+            if (iters < MinIterations)
+            {
+                return false;
+            }
+            if (!IsLowerHexOfLength(hex, KeyLen * 2))
+            {
+                return false;
+            }
+            auto decoded = Base64Decode(saltB64);
+            if (!decoded || decoded->size() != SaltLen)
+            {
+                return false;
+            }
+
+            iterations = iters;
+            salt = std::move(*decoded);
+            expectedHex = hex;
+            return true;
+        }
     }
 
     bool IsHashedToken(std::string_view value)
     {
-        return value.size() > HashPrefix.size() && value.substr(0, HashPrefix.size()) == HashPrefix;
+        // A token is only considered "hashed" if it is a well-formed, non-weak
+        // entry. A malformed or downgraded entry is rejected here, so the server
+        // refuses to start with it and auth never accepts it.
+        uint32_t iterations = 0;
+        std::vector<uint8_t> salt;
+        std::string_view expectedHex;
+        return ParseTokenHash(value, iterations, salt, expectedHex);
     }
 
     std::string MakeTokenHash(std::string_view token)
@@ -294,39 +369,15 @@ namespace RemoteControl::Crypto
 
     bool VerifyTokenHash(std::string_view storedEntry, std::string_view presentedToken)
     {
-        if (!IsHashedToken(storedEntry))
-        {
-            return false;
-        }
-        // Parse "pbkdf2$<iterations>$<base64-salt>$<hex-hash>".
-        const auto afterPrefix = storedEntry.substr(HashPrefix.size());
-        const auto sep1 = afterPrefix.find('$');
-        if (sep1 == std::string_view::npos)
-        {
-            return false;
-        }
-        const auto sep2 = afterPrefix.find('$', sep1 + 1);
-        if (sep2 == std::string_view::npos)
-        {
-            return false;
-        }
-        const auto itersStr = afterPrefix.substr(0, sep1);
-        const auto saltB64 = afterPrefix.substr(sep1 + 1, sep2 - sep1 - 1);
-        const auto expectedHex = afterPrefix.substr(sep2 + 1);
-
         uint32_t iterations = 0;
-        if (std::from_chars(itersStr.data(), itersStr.data() + itersStr.size(), iterations).ec != std::errc{} || iterations == 0)
+        std::vector<uint8_t> salt;
+        std::string_view expectedHex;
+        if (!ParseTokenHash(storedEntry, iterations, salt, expectedHex))
         {
             return false;
         }
 
-        const auto salt = Base64Decode(saltB64);
-        if (!salt)
-        {
-            return false;
-        }
-
-        const auto actualHex = ToHex(Pbkdf2(presentedToken, *salt, iterations));
+        const auto actualHex = ToHex(Pbkdf2(presentedToken, salt, iterations));
         return ConstantTimeEqualsLocal(expectedHex, actualHex);
     }
 }
