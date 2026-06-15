@@ -4,16 +4,16 @@
 
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
-> ## 🔌 About this fork — Remote Control API
+> ## 🔌 WindowsTerminalRemote — Remote Control API
 >
-> **English:** This fork adds a built-in, **localhost-only Remote Control API**
+> **English:** **WindowsTerminalRemote** is this fork of Windows Terminal. It adds a built-in, **localhost-only Remote Control API**
 > (HTTP + WebSocket) that lets local programs attach to a visible terminal pane —
 > read its output, write input, and stream it live — while you keep using the
 > pane normally. It is **off by default**, loopback-only, requires a PBKDF2-hashed
 > token, and includes a destructive-command kill-switch and logging.
 > 👉 **See [REMOTE_CONTROL.md](./REMOTE_CONTROL.md) for the full API reference.**
 >
-> **中文:** 本仓库在 Windows Terminal 内置了一个**仅监听本机的远程控制 API**
+> **中文:** **WindowsTerminalRemote** 是本 Windows Terminal fork,内置了一个**仅监听本机的远程控制 API**
 > (HTTP + WebSocket),让本机其它程序接管某个可见 pane —— 读取输出、写入输入、
 > 实时订阅 —— 同时你照常使用该 pane。**默认关闭**、仅 loopback、需要 PBKDF2 哈希
 > token,并内置毁灭性命令熔断与日志。

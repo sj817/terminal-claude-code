@@ -1,8 +1,8 @@
-# Windows Terminal — Remote Control API (fork)
+# WindowsTerminalRemote — Remote Control API
 
 *[English](#english) · [中文](#中文)*
 
-This fork of Windows Terminal adds a **local Remote Control API**: a small,
+**WindowsTerminalRemote** is a fork of Windows Terminal that adds a **local Remote Control API**: a small,
 localhost-only HTTP + WebSocket server, built into the terminal, that lets other
 local programs **attach to a visible pane** — read its output, write input, and
 stream it live — while you keep using the same pane normally. It is **off by
