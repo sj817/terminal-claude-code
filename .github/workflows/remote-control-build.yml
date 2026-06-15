@@ -1,0 +1,96 @@
+# Builds this fork (Windows Terminal + the Remote Control API), runs the
+# RemoteControl unit tests, and publishes the MSIX + portable ZIP as artifacts.
+# On a v* tag it also creates a GitHub Release with those artifacts.
+#
+# Note: the projects target the Windows 11 SDK 10.0.26100.0 and use vcpkg
+# (manifest mode). GitHub-hosted windows runners provide VS (v143 toolset, which
+# the build props fall back to), a vcpkg at $env:VCPKG_ROOT, and recent SDKs. If
+# a runner image lacks SDK 26100 you may need to add a step to install it.
+
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to create releases on tags
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      Configuration: Release
+      Platform: x64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: |
+          & .\dep\nuget\nuget.exe restore .\OpenConsole.slnx
+          & .\dep\nuget\nuget.exe restore .\dep\nuget\packages.config
+
+      - name: Build RemoteControl unit tests
+        run: |
+          msbuild .\src\cascadia\UnitTests_RemoteControl\RemoteControl.UnitTests.vcxproj `
+            /p:Configuration=$env:Configuration /p:Platform=$env:Platform `
+            /p:SolutionDir="${{ github.workspace }}\" /m
+
+      - name: Run RemoteControl unit tests (TAEF)
+        run: |
+          $te = Get-ChildItem .\packages -Recurse -Filter te.exe |
+                Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -First 1
+          $dll = ".\bin\$env:Platform\$env:Configuration\RemoteControl.Unit.Tests.dll"
+          & $te.FullName $dll
+          if ($LASTEXITCODE -ne 0) { throw "unit tests failed" }
+
+      - name: Build MSIX package
+        run: |
+          msbuild .\OpenConsole.slnx `
+            /p:Configuration=$env:Configuration /p:Platform=$env:Platform `
+            /p:AppxBundle=Never /p:AppxPackageSigningEnabled=false /p:UapAppxPackageBuildMode=SideloadOnly `
+            /t:"Terminal\CascadiaPackage" /m
+
+      - name: Build portable (no-install) distribution
+        run: |
+          $msix = Get-ChildItem .\src\cascadia\CascadiaPackage\AppPackages -Recurse -Filter *.msix |
+                  Select-Object -First 1
+          $xaml = Get-ChildItem .\packages -Recurse -Filter Microsoft.UI.Xaml.2.8.appx |
+                  Where-Object { $_.FullName -match '\\x64\\Release\\' } | Select-Object -First 1
+          New-Item -ItemType Directory -Force .\_portable | Out-Null
+          .\build\scripts\New-UnpackagedTerminalDistribution.ps1 `
+            -TerminalAppX $msix.FullName -XamlAppX $xaml.FullName -Destination .\_portable -PortableMode
+
+      - name: Collect artifacts
+        run: |
+          New-Item -ItemType Directory -Force .\artifacts | Out-Null
+          Get-ChildItem .\src\cascadia\CascadiaPackage\AppPackages -Recurse -Filter *.msix |
+            Copy-Item -Destination .\artifacts
+          Get-ChildItem .\_portable -Filter *.zip | Copy-Item -Destination .\artifacts
+          Get-ChildItem .\artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsTerminal-RemoteControl-${{ env.Platform }}-${{ env.Configuration }}
+          path: artifacts/*
+          if-no-files-found: error
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true

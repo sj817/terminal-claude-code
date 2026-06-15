@@ -10,6 +10,7 @@
 #include "AppCommandlineArgs.h"
 #include "TerminalWindow.h"
 #include "ContentManager.h"
+#include "RemoteControlHost.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -75,6 +76,8 @@ namespace winrt::TerminalApp::implementation
         wil::unique_folder_change_reader_nothrow _reader;
 
         TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
+
+        RemoteControlHost _remoteControlHost;
 
         void _ApplyLanguageSettingChange() noexcept;
 

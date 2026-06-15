@@ -172,6 +172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset();
         int ViewHeight() const;
+        int ViewWidth() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -256,6 +257,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
         void HardResetWithoutErase();
+
+        winrt::guid SessionId() const noexcept;
+        Control::RemoteSnapshot ReadRemoteSnapshot() const;
+        Windows::Foundation::Collections::IVector<Control::RemoteCellRun> ReadRemoteCells() const;
 
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
 
@@ -424,6 +429,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
+
+        // A stable identifier for this terminal session (see SessionId()).
+        winrt::guid _sessionId{};
 
         struct StashedColorScheme
         {

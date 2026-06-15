@@ -414,6 +414,14 @@ namespace winrt::TerminalApp::implementation
         _ApplyLanguageSettingChange();
         _ProcessLazySettingsChanges();
 
+        // Start/stop/update the remote control server to match the current
+        // settings. Safe to call on both the initial load and subsequent reloads.
+        try
+        {
+            _remoteControlHost.ApplySettings(_settings.GlobalSettings().RemoteControl());
+        }
+        CATCH_LOG();
+
         if (initialLoad)
         {
             // Register for directory change notification.

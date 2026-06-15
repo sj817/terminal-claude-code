@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{EB9684E8-2DE4-49AB-8031-6F101890AF8B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RemoteControlUnitTests</RootNamespace>
+    <ProjectName>RemoteControl.Unit.Tests</ProjectName>
+    <TargetName>RemoteControl.Unit.Tests</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
+  <ItemGroup>
+    <ClCompile Include="RemoteControlTests.cpp" />
+    <ClCompile Include="precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteControl\RemoteControl.vcxproj">
+      <Project>{A919D688-4794-4FFC-8DB4-3D7F380D6F26}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;$(SolutionDir)src\cascadia\RemoteControl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- Manually disable unreachable code warning, because jsoncpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.tests.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
+</Project>

@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass RemoteControlViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        RemoteControlViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        Boolean RemoteControlEnabled;
+        // Host is intentionally read-only in the UI: the server is loopback-only.
+        String RemoteControlHost { get; };
+        // Exposed as Double so it binds cleanly to a NumberBox.
+        Double RemoteControlPort;
+        Boolean AllowRemoteInput;
+        Boolean AllowRemoteSnapshot;
+        Boolean AllowRemoteWebSocket;
+
+        // Transient plaintext box. Never persisted directly - ApplyToken hashes it.
+        String TokenInput;
+        // True when a token (stored as a salted hash) is configured.
+        Boolean IsTokenConfigured { get; };
+        // Hashes TokenInput and stores only the hash. An empty input clears the
+        // token, which leaves the server disabled until one is set (no token is
+        // ever auto-generated).
+        void ApplyToken();
+    }
+}

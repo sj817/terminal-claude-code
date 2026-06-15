@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                             const std::shared_ptr<TerminalSettingsCache>& cache,
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
+        ~TerminalPaneContent();
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Control::TermControl GetTermControl();
@@ -93,6 +94,13 @@ namespace winrt::TerminalApp::implementation
         } _controlEvents;
         void _setupControlEvents();
         void _removeControlEvents();
+
+        // Remote control: this session's stable id and the output subscription
+        // that forwards terminal output to the remote control registry.
+        std::string _remoteSessionId;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _remoteOutputRevoker;
+        void _registerRemoteSession();
+        void _unregisterRemoteSession();
 
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,

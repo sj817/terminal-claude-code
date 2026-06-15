@@ -9,6 +9,8 @@
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
 
+#include "RemoteSessionRegistry.h"
+
 #include "BellEventArgs.g.cpp"
 #include "TerminalPaneContent.g.cpp"
 
@@ -28,6 +30,143 @@ namespace winrt::TerminalApp::implementation
         _profile{ profile }
     {
         _setupControlEvents();
+        _registerRemoteSession();
+    }
+
+    TerminalPaneContent::~TerminalPaneContent()
+    {
+        _unregisterRemoteSession();
+    }
+
+    // Method Description:
+    // - Registers this pane's terminal session with the process-wide remote
+    //   control registry, so external clients can attach to it. The backend
+    //   callbacks capture a weak reference to the control, so registration never
+    //   keeps the pane alive. We also subscribe to the connection's output so the
+    //   registry can fan it out to any attached remote clients.
+    void TerminalPaneContent::_registerRemoteSession()
+    {
+        const auto core = _control.Core();
+        if (!core)
+        {
+            return;
+        }
+
+        const auto sessionGuid = core.SessionId();
+        const auto plain = ::Microsoft::Console::Utils::GuidToPlainString(reinterpret_cast<const GUID&>(sessionGuid));
+        // The plain GUID string is ASCII hex; narrow each character explicitly.
+        _remoteSessionId.clear();
+        _remoteSessionId.reserve(plain.size());
+        for (const auto ch : plain)
+        {
+            _remoteSessionId.push_back(static_cast<char>(ch));
+        }
+
+        RemoteControl::RemoteSessionRegistry::RegisterInfo info;
+        if (_profile)
+        {
+            info.profileName = std::wstring{ _profile.Name() };
+        }
+        // windowId/tabId/paneId are best-effort and left empty in this first
+        // version; the stable sessionId is what remote clients attach to.
+
+        const auto weakControl = winrt::make_weak(_control);
+
+        RemoteControl::RemoteSessionRegistry::Backend backend;
+        backend.writeInput = [weakControl](std::wstring_view data) -> bool {
+            const auto control = weakControl.get();
+            if (!control)
+            {
+                return false;
+            }
+            const auto connection = control.Connection();
+            if (!connection)
+            {
+                return false;
+            }
+            const auto first = reinterpret_cast<const char16_t*>(data.data());
+            connection.WriteInput(winrt::array_view<const char16_t>{ first, first + data.size() });
+            return true;
+        };
+        backend.getSnapshot = [weakControl](bool includeColor, RemoteControl::SnapshotData& out) -> bool {
+            const auto control = weakControl.get();
+            if (!control)
+            {
+                return false;
+            }
+            const auto c = control.Core();
+            if (!c)
+            {
+                return false;
+            }
+            const auto snap = c.ReadRemoteSnapshot();
+            out.text = std::wstring{ snap.Text };
+            out.cols = snap.Columns;
+            out.rows = snap.Rows;
+            out.cursorX = snap.CursorX;
+            out.cursorY = snap.CursorY;
+
+            if (includeColor)
+            {
+                const auto cells = c.ReadRemoteCells();
+                out.cells.clear();
+                out.cells.reserve(cells.Size());
+                for (const auto& run : cells)
+                {
+                    RemoteControl::CellRun cellRun;
+                    cellRun.text = std::wstring{ run.Text };
+                    cellRun.foreground = run.Foreground;
+                    cellRun.background = run.Background;
+                    cellRun.bold = run.Bold;
+                    cellRun.italic = run.Italic;
+                    cellRun.underline = run.Underline;
+                    cellRun.row = run.Row;
+                    out.cells.push_back(std::move(cellRun));
+                }
+                out.hasColor = true;
+            }
+            return true;
+        };
+        backend.fillMetadata = [weakControl](RemoteControl::SessionMetadata& meta) {
+            const auto control = weakControl.get();
+            const auto c = control ? control.Core() : nullptr;
+            if (!c)
+            {
+                meta.isAlive = false;
+                return;
+            }
+            meta.title = std::wstring{ c.Title() };
+            meta.rows = c.ViewHeight();
+            meta.cols = c.ViewWidth();
+            if (const auto cwd = c.WorkingDirectory(); !cwd.empty())
+            {
+                meta.cwd = std::wstring{ cwd };
+            }
+            const auto state = c.ConnectionState();
+            meta.isAlive = state == ConnectionState::Connected || state == ConnectionState::Connecting;
+        };
+
+        RemoteControl::RemoteSessionRegistry::Instance().Register(_remoteSessionId, std::move(info), std::move(backend));
+
+        // Forward raw connection output to the registry.
+        if (const auto connection = _control.Connection())
+        {
+            const auto id = _remoteSessionId;
+            _remoteOutputRevoker = connection.TerminalOutput(winrt::auto_revoke, [id](const winrt::array_view<const char16_t>& data) {
+                RemoteControl::RemoteSessionRegistry::Instance().OnOutput(id, std::wstring_view{ reinterpret_cast<const wchar_t*>(data.data()), data.size() });
+            });
+        }
+    }
+
+    void TerminalPaneContent::_unregisterRemoteSession()
+    {
+        if (_remoteSessionId.empty())
+        {
+            return;
+        }
+        _remoteOutputRevoker.revoke();
+        RemoteControl::RemoteSessionRegistry::Instance().Unregister(_remoteSessionId);
+        _remoteSessionId.clear();
     }
 
     void TerminalPaneContent::_setupControlEvents()
@@ -64,12 +203,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
         _control.Focus(reason);
+        if (!_remoteSessionId.empty())
+        {
+            RemoteControl::RemoteSessionRegistry::Instance().SetFocused(_remoteSessionId);
+        }
     }
     void TerminalPaneContent::Close()
     {
         // We deliberately remove the event handlers before closing the control.
         // This is to prevent reentrancy issues, pointless callbacks, etc.
         _removeControlEvents();
+        _unregisterRemoteSession();
 
         _control.Close();
     }
@@ -201,6 +345,13 @@ namespace winrt::TerminalApp::implementation
         {
             // Pane doesn't care if the connection isn't entering a terminal state.
             co_return;
+        }
+
+        // The connection has entered a terminal state - tell any attached remote
+        // clients that the session has exited.
+        if (!_remoteSessionId.empty())
+        {
+            RemoteControl::RemoteSessionRegistry::Instance().OnExit(_remoteSessionId, -1);
         }
 
         const auto weakThis = get_weak();

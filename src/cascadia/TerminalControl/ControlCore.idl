@@ -68,6 +68,30 @@ namespace Microsoft.Terminal.Control
         Boolean SearchRegexInvalid;
     };
 
+    // A plain-text snapshot of the visible viewport, used by the remote control API.
+    struct RemoteSnapshot
+    {
+        String Text;
+        Int32 Columns;
+        Int32 Rows;
+        Int32 CursorX;
+        Int32 CursorY;
+    };
+
+    // A run of contiguous cells in the visible viewport that share the same
+    // visual style. Used by the remote control API to report a colored snapshot.
+    // Foreground/Background are resolved 0x00RRGGBB values.
+    struct RemoteCellRun
+    {
+        String Text;
+        UInt32 Foreground;
+        UInt32 Background;
+        Boolean Bold;
+        Boolean Italic;
+        Boolean Underline;
+        Int32 Row;
+    };
+
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();
@@ -99,6 +123,24 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
         void HardResetWithoutErase();
+
+        // A stable identifier for this terminal session, generated once when the
+        // ControlCore is constructed. It stays the same as the owning pane moves
+        // between tabs or windows, so it is safe to use as a remote session id.
+        Guid SessionId { get; };
+
+        // Returns a plain-text snapshot of the currently visible viewport plus the
+        // viewport-relative cursor position. Used by the remote control API.
+        RemoteSnapshot ReadRemoteSnapshot();
+
+        // Returns the visible viewport as a list of style runs (with resolved
+        // colors), in reading order and grouped by row. Used by the remote
+        // control API to report a colored snapshot.
+        Windows.Foundation.Collections.IVector<RemoteCellRun> ReadRemoteCells();
+
+        // The width of the visible viewport in columns. (ICoreState already
+        // exposes ViewHeight for the row count.)
+        Int32 ViewWidth { get; };
 
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };

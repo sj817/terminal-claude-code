@@ -177,6 +177,10 @@
                                      x:Uid="Nav_Compatibility"
                                      Tag="Compatibility_Nav" />
 
+            <muxc:NavigationViewItem x:Name="RemoteControlNavItem"
+                                     x:Uid="Nav_RemoteControl"
+                                     Tag="RemoteControl_Nav" />
+
             <muxc:NavigationViewItem x:Name="ActionsNavItem"
                                      x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">

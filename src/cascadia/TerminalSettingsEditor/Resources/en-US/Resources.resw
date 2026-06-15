@@ -673,6 +673,78 @@
     <value>Compatibility</value>
     <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
   </data>
+  <data name="Nav_RemoteControl.Content" xml:space="preserve">
+    <value>Remote control</value>
+    <comment>Header for the "remote control" menu item. This navigates to a page for configuring the local remote control API that lets other local programs attach to terminal panes.</comment>
+  </data>
+  <data name="Globals_RemoteControlSecurityNotice.Title" xml:space="preserve">
+    <value>Local-only and off by default</value>
+    <comment>Title of a warning shown on the remote control settings page.</comment>
+  </data>
+  <data name="Globals_RemoteControlSecurityNotice.Message" xml:space="preserve">
+    <value>The remote control API only listens on the local machine (loopback) and requires a token for every request. You must set a token below for it to start - tokens are stored only as a salted hash and are never auto-generated. A whole-system destructive command (like deleting the entire drive) sent over the API is blocked and immediately disconnects all clients. Activity is written to remote-control.log in your settings folder.</value>
+    <comment>Body of a warning shown on the remote control settings page.</comment>
+  </data>
+  <data name="Globals_RemoteControlEnabled.Header" xml:space="preserve">
+    <value>Enable the remote control API</value>
+    <comment>Header for a toggle that turns the remote control API on or off.</comment>
+  </data>
+  <data name="Globals_RemoteControlEnabled.HelpText" xml:space="preserve">
+    <value>When on, a localhost HTTP/WebSocket server lets local programs view and drive terminal panes. Off by default.</value>
+    <comment>Help text under the "enable remote control" toggle.</comment>
+  </data>
+  <data name="Globals_RemoteControlHost.Header" xml:space="preserve">
+    <value>Host</value>
+    <comment>Header for the read-only host field on the remote control page.</comment>
+  </data>
+  <data name="Globals_RemoteControlHost.HelpText" xml:space="preserve">
+    <value>The address the server binds to. This is fixed to the local loopback address for safety.</value>
+    <comment>Help text under the read-only host field.</comment>
+  </data>
+  <data name="Globals_RemoteControlPort.Header" xml:space="preserve">
+    <value>Port</value>
+    <comment>Header for the TCP port number field on the remote control page.</comment>
+  </data>
+  <data name="Globals_RemoteControlPort.HelpText" xml:space="preserve">
+    <value>The TCP port the server listens on.</value>
+    <comment>Help text under the port field.</comment>
+  </data>
+  <data name="Globals_RemoteControlToken.Header" xml:space="preserve">
+    <value>Access token</value>
+    <comment>Header for the access token field on the remote control page.</comment>
+  </data>
+  <data name="Globals_RemoteControlToken.HelpText" xml:space="preserve">
+    <value>Type the token your clients will use, then click Apply. Only a salted hash is saved - the token itself is never written to disk and cannot be recovered, so keep your own copy. A token is required: the API will not start until one is set, and tokens are never auto-generated. Clear the box and click Apply to remove the token (which disables the API).</value>
+    <comment>Help text under the token field.</comment>
+  </data>
+  <data name="Globals_RemoteControlApplyToken.Content" xml:space="preserve">
+    <value>Apply</value>
+    <comment>Label of a button that hashes the entered token and saves it.</comment>
+  </data>
+  <data name="Globals_AllowRemoteInput.Header" xml:space="preserve">
+    <value>Allow remote input</value>
+    <comment>Header for a toggle that allows remote clients to type into panes.</comment>
+  </data>
+  <data name="Globals_AllowRemoteInput.HelpText" xml:space="preserve">
+    <value>When off, input, key and interrupt requests are rejected.</value>
+    <comment>Help text under the "allow remote input" toggle.</comment>
+  </data>
+  <data name="Globals_AllowRemoteSnapshot.Header" xml:space="preserve">
+    <value>Allow snapshots</value>
+    <comment>Header for a toggle that allows remote clients to read the visible pane contents.</comment>
+  </data>
+  <data name="Globals_AllowRemoteSnapshot.HelpText" xml:space="preserve">
+    <value>When off, snapshot requests are rejected.</value>
+    <comment>Help text under the "allow snapshots" toggle.</comment>
+  </data>
+  <data name="Globals_AllowRemoteWebSocket.Header" xml:space="preserve">
+    <value>Allow live streaming</value>
+    <comment>Header for a toggle that allows remote clients to stream pane output over WebSocket.</comment>
+  </data>
+  <data name="Globals_AllowRemoteWebSocket.HelpText" xml:space="preserve">
+    <value>When off, WebSocket stream requests are rejected.</value>
+    <comment>Help text under the "allow live streaming" toggle.</comment>
+  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>

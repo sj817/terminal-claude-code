@@ -9,6 +9,8 @@
 #include "Compatibility.h"
 #include "Rendering.h"
 #include "RenderingViewModel.h"
+#include "RemoteControl.h"
+#include "RemoteControlViewModel.h"
 #include "Extensions.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
@@ -585,6 +587,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<NavigateToPageArgs>(winrt::make<CompatibilityViewModel>(_settingsClone), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None));
+            }
+            else if (*clickedItemTag == remoteControlTag)
+            {
+                contentFrame().Navigate(xaml_typename<Editor::RemoteControl>(), winrt::make<NavigateToPageArgs>(winrt::make<RemoteControlViewModel>(_settingsClone), *this, elementToFocus));
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_RemoteControl/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == actionsTag)
             {

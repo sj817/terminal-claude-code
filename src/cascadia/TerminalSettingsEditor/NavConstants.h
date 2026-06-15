@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     inline constexpr std::wstring_view addProfileTag{ L"AddProfile" };
     inline constexpr std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
     inline constexpr std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+    inline constexpr std::wstring_view remoteControlTag{ L"RemoteControl_Nav" };
 
     // Map from navigation tags to Segoe MDL2 Assets icon glyphs
     inline constexpr til::static_map NavTagIconMap{
@@ -30,6 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::pair{ colorSchemesTag, L"\xE790" }, /* Color */
         std::pair{ renderingTag, L"\xE7F8" }, /* Device Laptop No Pic */
         std::pair{ compatibilityTag, L"\xEC7A" }, /* Developer Tools */
+        std::pair{ remoteControlTag, L"\xE8CE" }, /* Remote */
         std::pair{ actionsTag, L"\xE765" }, /* Keyboard Classic */
         std::pair{ newTabMenuTag, L"\xE71D" }, /* All Apps */
         std::pair{ extensionsTag, L"\xEA86" }, /* Puzzle */

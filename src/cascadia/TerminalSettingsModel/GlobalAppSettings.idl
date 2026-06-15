@@ -20,6 +20,21 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int32> Y;
     };
 
+    // Settings for the localhost remote control API. See src/cascadia/RemoteControl.
+    // The whole feature is opt-in: when Enabled is false (the default) no server is
+    // ever started. The default Host is loopback only; binding to anything else is
+    // an explicit, warned-about choice.
+    struct RemoteControlSettings
+    {
+        Boolean Enabled;
+        String Host;
+        UInt32 Port;
+        String Token;
+        Boolean AllowInput;
+        Boolean AllowSnapshot;
+        Boolean AllowWebSocket;
+    };
+
     [flags]
     enum LaunchMode
     {
@@ -115,6 +130,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
         INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
+        INHERITABLE_SETTING(RemoteControlSettings, RemoteControl);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

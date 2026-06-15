@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A919D688-4794-4FFC-8DB4-3D7F380D6F26}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RemoteControl</RootNamespace>
+    <ProjectName>RemoteControl</ProjectName>
+    <TargetName>RemoteControl</TargetName>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="IRemoteHost.h" />
+    <ClInclude Include="RemoteConfig.h" />
+    <ClInclude Include="RemoteKeys.h" />
+    <ClInclude Include="RemoteCrypto.h" />
+    <ClInclude Include="RemoteGuard.h" />
+    <ClInclude Include="RemoteLog.h" />
+    <ClInclude Include="RemoteAuth.h" />
+    <ClInclude Include="RemoteHttp.h" />
+    <ClInclude Include="RemoteWebSocket.h" />
+    <ClInclude Include="RemoteJson.h" />
+    <ClInclude Include="RemoteSessionRegistry.h" />
+    <ClInclude Include="RemoteApiServer.h" />
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="RemoteKeys.cpp" />
+    <ClCompile Include="RemoteCrypto.cpp" />
+    <ClCompile Include="RemoteGuard.cpp" />
+    <ClCompile Include="RemoteLog.cpp" />
+    <ClCompile Include="RemoteAuth.cpp" />
+    <ClCompile Include="RemoteHttp.cpp" />
+    <ClCompile Include="RemoteWebSocket.cpp" />
+    <ClCompile Include="RemoteJson.cpp" />
+    <ClCompile Include="RemoteSessionRegistry.cpp" />
+    <ClCompile Include="RemoteApiServer.cpp" />
+  </ItemGroup>
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
+</Project>

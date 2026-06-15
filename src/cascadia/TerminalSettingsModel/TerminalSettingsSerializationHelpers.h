@@ -379,6 +379,51 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::RemoteControlSettings>
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::RemoteControlSettings FromJson(const Json::Value& json)
+    {
+        // Start from the same defaults the setting itself uses, so a partially
+        // specified object only overrides the keys that are present.
+        ::winrt::Microsoft::Terminal::Settings::Model::RemoteControlSettings settings{
+            false, ::winrt::hstring{ L"127.0.0.1" }, 9177u, ::winrt::hstring{}, true, true, true
+        };
+
+        GetValueForKey(json, std::string_view("enabled"), settings.Enabled);
+        GetValueForKey(json, std::string_view("host"), settings.Host);
+        GetValueForKey(json, std::string_view("port"), settings.Port);
+        GetValueForKey(json, std::string_view("token"), settings.Token);
+        GetValueForKey(json, std::string_view("allowInput"), settings.AllowInput);
+        GetValueForKey(json, std::string_view("allowSnapshot"), settings.AllowSnapshot);
+        GetValueForKey(json, std::string_view("allowWebSocket"), settings.AllowWebSocket);
+        return settings;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isObject();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::RemoteControlSettings& val)
+    {
+        Json::Value json{ Json::objectValue };
+        SetValueForKey(json, std::string_view("enabled"), val.Enabled);
+        SetValueForKey(json, std::string_view("host"), val.Host);
+        SetValueForKey(json, std::string_view("port"), val.Port);
+        SetValueForKey(json, std::string_view("token"), val.Token);
+        SetValueForKey(json, std::string_view("allowInput"), val.AllowInput);
+        SetValueForKey(json, std::string_view("allowSnapshot"), val.AllowSnapshot);
+        SetValueForKey(json, std::string_view("allowWebSocket"), val.AllowWebSocket);
+        return json;
+    }
+
+    std::string TypeDescription() const
+    {
+        return "remoteControl { enabled, host, port, token, allowInput, allowSnapshot, allowWebSocket }";
+    }
+};
+
 struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<float>
 {
     float FromJson(const Json::Value& json)

@@ -55,6 +55,10 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
         void HardResetWithoutErase();
 
+        // The underlying ControlCore. Exposed so the remote control feature can
+        // read a session's stable id, snapshot and dimensions.
+        ControlCore Core { get; };
+
         UInt64 ContentId{ get; };
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };

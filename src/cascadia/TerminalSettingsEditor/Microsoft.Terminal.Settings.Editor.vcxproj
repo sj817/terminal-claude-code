@@ -123,6 +123,10 @@
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="RemoteControlViewModel.h">
+      <DependentUpon>RemoteControlViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -169,6 +173,9 @@
     </ClInclude>
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="RemoteControl.h">
+      <DependentUpon>RemoteControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingContainer.h">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -247,6 +254,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Rendering.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="RemoteControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingContainerStyle.xaml">
@@ -335,6 +345,10 @@
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="RemoteControlViewModel.cpp">
+      <DependentUpon>RemoteControlViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -381,6 +395,9 @@
     </ClCompile>
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="RemoteControl.cpp">
+      <DependentUpon>RemoteControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingContainer.cpp">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -447,6 +464,10 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="RemoteControl.idl">
+      <DependentUpon>RemoteControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="SearchIndex.idl" />
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -457,6 +478,7 @@
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="RenderingViewModel.idl" />
+    <Midl Include="RemoteControlViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
@@ -513,6 +535,10 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\RemoteControl\RemoteControl.vcxproj">
+      <Project>{A919D688-4794-4FFC-8DB4-3D7F380D6F26}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">

@@ -97,6 +97,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _settings = settings;
         _hasUnfocusedAppearance = static_cast<bool>(unfocusedAppearance);
         _unfocusedAppearance = _hasUnfocusedAppearance ? unfocusedAppearance : settings;
+
+        // Generate a stable identifier for this session. It is used by the remote
+        // control API to refer to this pane and stays constant for the lifetime of
+        // the ControlCore, even as the pane is moved between tabs or windows.
+        GUID sessionId{};
+        THROW_IF_FAILED(CoCreateGuid(&sessionId));
+        _sessionId = sessionId;
+
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         const auto lock = _terminal->LockForWriting();
 
@@ -1584,6 +1592,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetViewport().Height();
     }
 
+    int ControlCore::ViewWidth() const
+    {
+        const auto lock = _terminal->LockForReading();
+        return _terminal->GetViewport().Width();
+    }
+
     // Function Description:
     // - Gets the height of the terminal in lines of text. This includes the
     //   history AND the viewport.
@@ -2358,6 +2372,136 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 conpty.ClearBuffer(true);
             }
         }
+    }
+
+    winrt::guid ControlCore::SessionId() const noexcept
+    {
+        return _sessionId;
+    }
+
+    // Method Description:
+    // - Produces a plain-text snapshot of the currently visible viewport, along
+    //   with the viewport-relative cursor position and dimensions. This is the
+    //   data returned by the remote control API's snapshot endpoint. Colors,
+    //   styles and scrollback are intentionally not included in this first
+    //   version - only the visible grid text.
+    // - Safe to call from any thread; it takes the terminal lock internally.
+    Control::RemoteSnapshot ControlCore::ReadRemoteSnapshot() const
+    {
+        Control::RemoteSnapshot snapshot{};
+
+        if (!_initializedTerminal.load(std::memory_order_relaxed))
+        {
+            return snapshot;
+        }
+
+        const auto lock = _terminal->LockForReading();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+        const auto viewport = _terminal->GetViewport();
+        const auto top = viewport.Top();
+        const auto bottom = viewport.BottomInclusive();
+
+        std::wstring str;
+        for (auto rowIndex = top; rowIndex <= bottom; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            const auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != decltype(rowText)::npos)
+            {
+                str.append(rowText.substr(0, strEnd + 1));
+            }
+
+            // Join the visible rows with CRLF. Unlike ReadEntireBuffer(), we emit a
+            // line break for every grid row (not just unwrapped ones) so the result
+            // reflects what is actually drawn on screen.
+            if (rowIndex != bottom)
+            {
+                str.append(L"\r\n");
+            }
+        }
+
+        const auto cursorPos = _terminal->GetViewportRelativeCursorPosition();
+
+        snapshot.Text = hstring{ str };
+        snapshot.Columns = viewport.Width();
+        snapshot.Rows = viewport.Height();
+        snapshot.CursorX = cursorPos.x;
+        snapshot.CursorY = cursorPos.y;
+        return snapshot;
+    }
+
+    // Method Description:
+    // - Returns the visible viewport as a list of style runs. Adjacent cells that
+    //   share the same text attributes are merged into a single run. Colors are
+    //   resolved to 0x00RRGGBB using the active render settings (so indexed and
+    //   default colors come out as concrete RGB). Used by the remote control API
+    //   for the colored snapshot. Safe to call from any thread.
+    Windows::Foundation::Collections::IVector<Control::RemoteCellRun> ControlCore::ReadRemoteCells() const
+    {
+        std::vector<Control::RemoteCellRun> runs;
+
+        if (!_initializedTerminal.load(std::memory_order_relaxed))
+        {
+            return winrt::single_threaded_vector(std::move(runs));
+        }
+
+        const auto lock = _terminal->LockForReading();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+        const auto& renderSettings = _terminal->GetRenderSettings();
+        const auto viewport = _terminal->GetViewport();
+        const auto top = viewport.Top();
+        const auto bottom = viewport.BottomInclusive();
+        const auto width = viewport.Width();
+
+        auto rowIndex = 0;
+        for (auto y = top; y <= bottom; ++y, ++rowIndex)
+        {
+            const auto& row = textBuffer.GetRowByOffset(y);
+
+            std::wstring runText;
+            std::optional<TextAttribute> runAttr;
+            uint32_t runFg = 0;
+            uint32_t runBg = 0;
+
+            auto flush = [&]() {
+                if (!runText.empty() && runAttr)
+                {
+                    Control::RemoteCellRun run{};
+                    run.Text = hstring{ runText };
+                    run.Foreground = runFg;
+                    run.Background = runBg;
+                    run.Bold = runAttr->IsIntense();
+                    run.Italic = runAttr->IsItalic();
+                    run.Underline = runAttr->IsUnderlined();
+                    run.Row = rowIndex;
+                    runs.push_back(run);
+                }
+                runText.clear();
+                runAttr.reset();
+            };
+
+            for (til::CoordType x = 0; x < width; ++x)
+            {
+                const auto attr = row.GetAttrByColumn(x);
+                if (!runAttr || !(runAttr.value() == attr))
+                {
+                    flush();
+                    const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
+                    runFg = (static_cast<uint32_t>(GetRValue(fg)) << 16) | (static_cast<uint32_t>(GetGValue(fg)) << 8) | GetBValue(fg);
+                    runBg = (static_cast<uint32_t>(GetRValue(bg)) << 16) | (static_cast<uint32_t>(GetGValue(bg)) << 8) | GetBValue(bg);
+                    runAttr = attr;
+                }
+                // GlyphAt returns the whole glyph at the lead column and an empty
+                // view at the trailing column of a wide glyph, so appending is safe.
+                runText.append(row.GlyphAt(x));
+            }
+            flush();
+        }
+
+        return winrt::single_threaded_vector(std::move(runs));
     }
 
     hstring ControlCore::ReadEntireBuffer() const

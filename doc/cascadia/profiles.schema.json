@@ -2576,6 +2576,47 @@
           "description": "When set to true, tabs remain visible in fullscreen mode. When set to false, tabs will be hidden when entering fullscreen mode.",
           "type": "boolean"
         },
+        "remoteControl": {
+          "description": "Settings for the localhost remote control API, which lets local programs attach to terminal panes. Disabled by default. The server only ever listens on the configured host (loopback by default); binding to a non-loopback address is an explicit, warned-about choice.",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "When true, start a localhost HTTP/WebSocket server that exposes the remote control API. When false (the default) no server is started.",
+              "type": "boolean"
+            },
+            "host": {
+              "default": "127.0.0.1",
+              "description": "The address the server binds to. Defaults to loopback (127.0.0.1). Setting this to 0.0.0.0 exposes the API to the local network and is strongly discouraged.",
+              "type": "string"
+            },
+            "port": {
+              "default": 9177,
+              "description": "The TCP port the server listens on.",
+              "type": "integer"
+            },
+            "token": {
+              "default": "",
+              "description": "The bearer token required for all requests, stored only as a PBKDF2 hash (pbkdf2$iterations$salt$hash) - set it from Settings > Remote control. Plaintext tokens are not accepted and none is ever auto-generated; the API stays off until a hashed token is set.",
+              "type": "string"
+            },
+            "allowInput": {
+              "default": true,
+              "description": "When false, input/key/interrupt endpoints return 403.",
+              "type": "boolean"
+            },
+            "allowSnapshot": {
+              "default": true,
+              "description": "When false, the snapshot endpoint returns 403.",
+              "type": "boolean"
+            },
+            "allowWebSocket": {
+              "default": true,
+              "description": "When false, the WebSocket stream endpoint returns 403.",
+              "type": "boolean"
+            }
+          }
+        },
         "useAcrylicInTabRow": {
           "default": false,
           "description": "When set to true, the tab row will have an acrylic material background with 50% opacity.",

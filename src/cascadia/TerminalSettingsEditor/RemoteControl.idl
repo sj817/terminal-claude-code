@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "RemoteControlViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass RemoteControl : Windows.UI.Xaml.Controls.Page
+    {
+        RemoteControl();
+        RemoteControlViewModel ViewModel { get; };
+    }
+}

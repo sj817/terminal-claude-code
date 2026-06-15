@@ -192,6 +192,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Connection(const TerminalConnection::ITerminalConnection& connection);
         void HardResetWithoutErase();
 
+        Control::ControlCore Core() const noexcept { return _core; }
+
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
 
